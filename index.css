@@ -1,0 +1,73 @@
+body {
+	background-image: url('bg.jpg');
+	background-size: cover;
+}
+
+.jumbotron {
+	padding-top: 15px;
+	padding-right: 5px;
+	padding-left: 5px;
+	padding-bottom: 1px; margin-top : 20px;
+	background: rgb(152, 152, 152);
+	background: rgba(152, 152, 152, 0.5);
+	margin-top: 20px;
+}
+
+.whiteFont {
+	color: white;
+}
+/* tab color */
+.nav-tabs>li>a {
+  background-color: #E0ECF8; 
+  border-color: #E0ECF8;
+  color:#006697;
+}
+
+/* active tab color */
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus {
+  color: #fff;
+  background-color: #006697;
+  border: 1px solid #006697;
+}
+
+.marginTabThree{
+	margin-left:10px;
+	margin-right:10px;
+}
+
+/* hover tab color */
+.nav-tabs>li>a:hover {
+  border-color: #81BEF7;
+  background-color: #A9D0F5;
+}
+
+
+.table-striped>tbody>tr:nth-child(odd)>td, 
+.table-striped>tbody>tr:nth-child(odd)>th {
+   background-color: #FFCCCC;
+ }
+
+.nopadding {
+   padding: 0 !important;
+   margin: 0 !important;
+}
+
+ .test {
+      height: 100%;
+      width: 100%;
+      padding: 4px 0px;
+      color:white; font-size:12px;
+      border-radius: 12px;
+    }
+    
+    
+    .row.no-gutter {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.row.no-gutter [class*='col-']:not(:first-child),
+.row.no-gutter [class*='col-']:not(:last-child) {
+  padding-right: 0;
+  padding-left: 0;
+}

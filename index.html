@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Weather Forecast</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="http://openlayers.org/en/v3.10.1/css/ol.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+<link rel="stylesheet" href="index.css">
+</head>
+<script type="text/javascript">
+ var loc;
+ var img;
+ var subHeading;
+ var fbCaption = "WEATHER INFORMATION FROM FORECAST.IO";
+ $(document).ready(function() {
+	    if(location.hash) {
+	        $('a[href=' + location.hash + ']').tab('show');
+	    }
+	    $(document.body).on("click", "a[data-toggle]", function(event) {
+	        location.hash = this.getAttribute("href");
+	    });
+	});
+	$(window).on('popstate', function() {
+	    var anchor = location.hash || $("a[data-toggle=tab]").first().attr("href");
+	    $('a[href=' + anchor + ']').tab('show');
+	});
+	
+	$('#form').each(function(){ 
+	    this.reset();
+	});
+ $(function(){
+	 $("#clear").click(function(){
+		  $("#result").hide();
+		});
+ });
+ 
+$(document).ready(function () {
+	$("#result").hide();
+    $("#form").validate({
+        rules: {
+            "streetAddress": {
+                required: true
+            },  
+            "city": {
+                required: true
+            },
+            "state":{
+            	required: true
+            }
+        },
+        messages : {
+			streetAddress : "Please enter the street address",
+			city : "Please enter the city",
+			state : "Please select a state"
+		},
+        errorElement: "div",
+        wrapper: "div",
+        errorPlacement: function(error, element) {
+            offset = element.offset();
+            error.insertAfter(element)
+            error.css('color','red');
+            error.css('font-size','12px');
+        },
+        submitHandler: function(form){
+        	
+        	$.ajax({
+                url: 'index.php',
+                data: $(form).serialize(),
+                type: 'GET',
+                success: function(response) {
+                	var obj = $.parseJSON(response);
+                   //console.log(obj);
+                	//summary
+                	var summary = obj.summary;
+                	
+                	//icon for image
+                 	var icon = obj.icon;
+                	var src = getImgSrc(icon);
+                	//console.log("src "+src);
+                	var lat = obj.lat;
+                	var lon = obj.lon;
+                	                	
+                	var image = "<br><br><br><img src=\""+src+"\" height=\"200px\" width=\"110px\" class=\"img-responsive center-block\ style=\"padding-top:40px;margin-top:30px; margin-bottom:30px;\"><br><br><br>";
+                	var city = $('#city').val();
+                	var state = $( "#state").val();
+                	var temp_unit = $("input:radio[name=degree]:checked").val();
+                	
+                	//get temperature from json
+                	var temp = obj.temperature;
+                	var unit = "";
+                	var tUnit = "";
+                	if(temp_unit == "us"){
+                    	  unit = "&#176"+"F";
+                    	  tUnit = "F";
+                    }
+                    else{
+                    	  unit = "&#176"+"C";
+                    	  tUnit = "C";
+                    }
+                	
+                	var precipitation = obj.precipitation;
+                	var chanceOfRain = obj.chanceOfRain;
+                	var windSpeed = obj.windSpeed;
+                	var dewPoint = obj.dewPoint;
+                	var humidity = obj.humidity;
+                	var visibiliity = obj.visibility;
+                	var sunrise = obj.sunrise;
+                	var sunset = obj.sunset;
+                
+                	loc = "Current Weather in "+city+", "+state;
+                	img = src;
+                	subHeading = summary+", "+temp +" \xB0"+tUnit;
+                	
+                	var summaryDisplay = "<p class=\"whiteFont\">"+summary+" in "+city+","+state+"</p><br>";
+                	summaryDisplay += "<p><span class=\"whiteFont\" style=\"font-size:75px;\"><b>"+temp+"<sup><span class=\"whiteFont\" style=\"font-size:35px;\">"+unit+"</span></sup></b></span></p>";
+                	var tempMin = obj.tempMin;
+                	var tempMax = obj.tempMax;
+                	var fbIconPath = "http://cs-server.usc.edu:45678/hw/hw8/images/fb_icon.png";
+                	summaryDisplay += "<p><div class=\"text-center\"><span style=\"padding-left: 30px;\"><span style=\"color:#0000FF;\">L:"+tempMin+"</span>"+" | "+"<span style=\"color:#298A08;\">H:"+tempMax+"</span></span>"
+                	               +"<span style=\"float:right; margin-bottom:20px; margin-right:15px;\"><img onclick=\"fbShare()\" style=\"cursor:pointer\" src=\""+fbIconPath+"\" height=\"40px\" width=\"40px\"></span></div></p>";
+                	//var fbIconDisplay = "<br><br><br><br><br><br><br><br><img onclick=\"fbShare()\" src=\""+fbIconPath+"\" height=\"40px\" width=\"40px\">";     
+                	
+                	var tabTwoHtml = "";
+                	//next 24hours data
+                	
+                   for(i=0;i<24;i++){
+                	   tabTwoHtml +=  "<div class=\"panel-group\" style=\"border-color:black;\">"
+						+"<div class=\"panel panel-default\" style=\"margin-bottom:-20px; background-color:#FFFFFF;\">"
+						+"<div class=\"panel-heading\" style=\"background-color:#FFFFFF\">"
+							+"<div class=\"row\">"
+							    +"<div class=\"col-xs-1 col-md-1\"></div>"
+								+"<div class=\"col-xs-2 col-md-2\"><div class=\"text-left\">"+obj[i][0]+"</div></div>";
+					    var src = getImgSrc(obj[i][1]);
+					    tabTwoHtml += "<div class=\"col-xs-2 col-md-2\"><img src=\""+src+"\" height=\"50px;\" width=\"50px;\"></div>"
+								+"<div class=\"col-xs-2 col-md-2\">"+obj[i][2]+"</div>"
+								+"<div class=\"col-xs-2 col-md-2\">"+obj[i][3]+"</div>"
+								+"<div class=\"col-xs-2 col-md-2\">"
+								+"<a data-toggle=\"collapse\" href=\"#collapse"+i+"\"><span class=\"glyphicon glyphicon-plus\"></span></a>"
+								+"</div>"
+								+"<div class=\"col-xs-1 col-md-1\"></div>"
+								+"</div>"
+								+"</div>"
+								+"<div id=\"collapse"+i+"\" class=\"panel-collapse collapse\" style=\"padding-top:20; margin-left: auto; margin-right: auto;word-wrap: break-word; background-color:#F2F2F2;\">"
+								+"<div class=\"row\"><div class=\"col-xs-12 col-md-12\"><br></div></div>"
+								+"<div class=\"row\"><div class=\"col-xs-12 col-md-12\"><table class=\"table well\" style=\"width:70%;\" align=\"center\">"
+							    +"<thead>"
+							      +"<tr style=\"background-color:#FFFFFF;\">"
+							        +"<th>Wind</th>"
+							        +"<th>Humidity</th>"
+							        +"<th>Visibility</th>"
+							        +"<th>Pressure</th>"
+							      +"</tr>"
+							    +"</thead>"
+							    +"<tbody>"
+							      +"<tr>"
+							        +"<td>"+obj[i][4]+"</td>"
+							        +"<td>"+obj[i][5]+"</td>"
+							        +"<td>"+obj[i][6]+"</td>"
+							        +"<td>"+obj[i][7]+"</td>"
+							      +"</tr>"
+							    +"</tbody>"
+							    +"</table></div></div>"
+							    +"<div class=\"row\"><div class=\"col-xs-12 col-md-12\"><br></div></div>"
+								+"</div>"
+								+"</div>"
+								+"</div>";
+                   }
+					
+                	//next week
+                	
+                	for(i=24; i < 31; i++){
+                			var day = obj[i][0];
+                    		var date = obj[i][1];
+                    		var imgSrc = getImgSrc(obj[i][2]);
+                    		var minTemp = obj[i][3];
+                    		var maxTemp = obj[i][4];
+                    		var summary = obj[i][5];
+                    		var sunrise = obj[i][6];
+                    		var sunset = obj[i][7];
+                    		var humidity = obj[i][8];
+                    		var windSpeed = obj[i][9];
+                    		var visibility = obj[i][10];
+                    		var pressure = obj[i][11];
+                    		
+                    	 var tabThreeHtml =  day+" "+"<br><br>"
+       	                 +date+" "+"<br>"
+       	                 +"<img src=\""+imgSrc+"\"height=\"50px\" width=\"50px\"><br>"
+       	                 +" "+"Min <br>Temp <br><br><span style=\"font-size:18px;\">"+minTemp+"</span><br><br>"
+       	                 +" "+"Max <br>Temp <br><br><span style=\"font-size:18px;\">"+maxTemp+"</span>";
+       	                 
+       	                 var index = i-23;
+                    	 $("#day"+index).html(tabThreeHtml);
+                    	 
+                    	 var modalHtml = "<div class =\"row\"><div class=\"col-xs-12 col-md-12 text-center\"><img src=\""+imgSrc+"\" height=\"100px\" width=\"100px\"><br></div></div>"
+       	                 +"<div class =\"row\"><div class=\"col-xs-12 col-md-12 text-center\">"
+       	                 +"<span style=\"font-size:24px;\">"+day+": "+"<span style=\"color:#FE9A2E;\">"+summary+"</span></span><br></div></div>"
+       	                 +"<div class =\"row\"><div class=\"col-xs-4 col-md-4 text-center\"><b>Sunrise Time</b> <br>"+sunrise+"</div>"
+       	                 +"<div class=\"col-xs-4 col-md-4 text-center\"><b>Sunset Time</b><br>"+sunset+"</div>"
+       	                 +"<div class=\"col-xs-4 col-md-4 text-center\"><b>Humidity</b> <br>"+humidity+"</div></div>"
+       	                 +"<div class =\"row\"><div class=\"col-xs-4 col-md-4 text-center\"><b>Wind Speed</b> <br>"+windSpeed+"</div>"
+       	                 +"<div class=\"col-xs-4 col-md-4 text-center\"><b>Visibility </b><br>"+visibility+"</div>"
+       	                 +"<div class=\"col-xs-4 col-md-4 text-center\"><b>Pressure</b> <br>"+pressure+"</div></div>";
+       	                 
+                    	 $("#mHeader"+index).html("Weather in "+city+" on "+date);
+                     	 $("#mBody"+index).html(modalHtml);
+       	                 
+                	}
+              
+                	$("#precipitation").html(precipitation);
+                	$("#chanceOfRain").html(chanceOfRain);
+                    $("#windSpeed").html(windSpeed);
+                    $("#dewPoint").html(dewPoint);
+                    $("#humidity").html(humidity);
+                    $("#visibility").html(visibiliity);
+                    $("#sunrise").html(sunrise);
+                    $("#sunset").html(sunset);
+                	$("#TabOneTempDisplay").html(summaryDisplay);
+                	$("#TabOneImage").html(image);  
+                	$("#temp").html("Temp("+unit+")");
+                //	$("#fbIcon").html(fbIconDisplay);
+                	//tab 2
+                	$("#nextHours").html(tabTwoHtml);
+                	$("#result").show();
+                	
+                	$(function() {
+                        $('#map').html("");
+						var map = new OpenLayers.Map("map");
+						var mapnik = new OpenLayers.Layer.OSM();
+		
+						var layer_cloud = new OpenLayers.Layer.XYZ(
+								"clouds",
+								"http://${s}.tile.openweathermap.org/map/clouds/${z}/${x}/${y}.png",
+							{
+								isBaseLayer: false,
+								opacity: 0.7,
+								sphericalMercator: true
+							}
+						);
+						var layer_precipitation = new OpenLayers.Layer.XYZ(
+								"precipitation",
+								"http://${s}.tile.openweathermap.org/map/precipitation/${z}/${x}/${y}.png",
+							{
+								isBaseLayer: false,
+								opacity: 0.7,
+								sphericalMercator: true
+							}
+						);
+						map.addLayers([mapnik, layer_precipitation, layer_cloud]);
+						map.addControl(new OpenLayers.Control.LayerSwitcher());     
+					
+						var lonlat = new OpenLayers.LonLat(lon, lat).transform(
+							new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+							map.getProjectionObject() // to Spherical Mercator Projection
+						);
+						map.setCenter( lonlat, 8 );		
+						
+						var markers = new OpenLayers.Layer.Markers( "Markers" );
+						map.addLayer(markers);
+						markers.addMarker(new OpenLayers.Marker(lonlat));
+						
+					});
+                }
+            });
+            return false;
+        }
+       });
+    });
+function fbShare(){
+	 FB.ui(
+	 {
+	 method: 'feed',
+	 name: loc,
+	 link: 'http://forecast.io',
+	 picture: img,
+	 caption: fbCaption,
+	 description: subHeading,
+	 message: ''
+	 },
+	 function(response) {
+	     if (response && response.post_id) {
+	       alert('Posted successfully');
+	     } else {
+	       alert('Not posted');
+	     }
+	   }
+	 
+	 );
+	 }
+ 
+   function getImgSrc(icon){
+    var src ="";
+   	var path = "http://cs-server.usc.edu:45678/hw/hw8/images/";
+	   if(icon == "clear-day")
+   		src = path+"clear.png";
+   	else if(icon == "clear-night")
+   		src = path+"clear_night.png";
+   	else if(icon == "rain")
+   		src = path+"rain.png";
+   	else if(icon == "snow")
+   		src = path+"snow.png";
+   	else if(icon == "sleet")
+   		src = path+"sleet.png";
+   	else if(icon == "wind")
+   		src = path+"wind.png";
+       else if(icon == "fog")
+       	src = path+"fog.png";	
+   	else if(icon == "cloudy")
+   		src = path+"cloudy.png";
+   	else if(icon == "partly-cloudy-day")
+   		src = path+"cloud_day.png";
+   	else if(icon == "partly-cloudy-night")
+   		src = path+"cloud_night.png";	
+	   
+	return src;
+   }
+</script>
+
+<body >
+
+	<script>
+	 window.fbAsyncInit = function() {
+		    FB.init({
+		      appId      : '1480862928890221',
+		      xfbml      : true,
+		      version    : 'v2.5'
+		    });
+		  };
+		  (function(d, s, id){
+		     var js, fjs = d.getElementsByTagName(s)[0];
+		     if (d.getElementById(id)) {return;}
+		     js = d.createElement(s); js.id = id;
+		     js.src = "//connect.facebook.net/en_US/sdk.js";
+		     fjs.parentNode.insertBefore(js, fjs);
+		   }(document, 'script', 'facebook-jssdk'));
+	</script>
+	<div class="container">
+		<h3 align="center">Forecast Search</h3>
+		<div class="jumbotron">
+			<form class="form-inline" id="form" method="get">
+				<div class="row">
+					<div class="col-md-2">
+						<div class="form-group">
+							<div class="text-left">
+								<label class="whiteFont" for="streetAddress">Street
+									Address:<span style="color: red;">*</span>
+								</label><br> <input type="text" class="form-control input-sm"
+									name="streetAddress" id="streetAddress"
+									placeholder="Enter street address">
+							</div>
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<label class="whiteFont" for="city">City:<span
+								style="color: red;">*</span></label><br> <input type="text"
+								class="form-control input-sm" name="city" id="city"
+								placeholder="Enter the city name">
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<label class="whiteFont" for="state">State:<span
+								style="color: red;">*</span></label><br> <select
+								class="form-control input-sm" name="state" id="state">
+								<option value="">Select your state..</option>
+								<option value="AL">Alabama</option>
+								<option value="AK">Alaska</option>
+								<option value="AZ">Arizona</option>
+								<option value="AR">Arkansas</option>
+								<option value="CA">California</option>
+								<option value="CO">Colorado</option>
+								<option value="CT">Connecticut</option>
+								<option value="DE">Delaware</option>
+								<option value="DC">District of Columbia</option>
+								<option value="FL">Florida</option>
+								<option value="GA">Georgia</option>
+								<option value="HI">Hawaii</option>
+								<option value="ID">Idaho</option>
+								<option value="IL">Illinois</option>
+								<option value="IN">Indiana</option>
+								<option value="IA">Iowa</option>
+								<option value="KS">Kansas</option>
+								<option value="KY">Kentucky</option>
+								<option value="LA">Loiusiana</option>
+								<option value="ME">Maine</option>
+								<option value="MD">Maryland</option>
+								<option value="MA">Massachusetts</option>
+								<option value="MI">Michigan</option>
+								<option value="MN">Minnesota</option>
+								<option value="MS">Mississippi</option>
+								<option value="MO">Missouri</option>
+								<option value="MT">Montana</option>
+								<option value="NE">Nebraska</option>
+								<option value="NV">Nevada</option>
+								<option value="NH">New Hampshire</option>
+								<option value="NJ">New Jersey</option>
+								<option value="NM">New Mexico</option>
+								<option value="NY">New York</option>
+								<option value="NC">North Carolina</option>
+								<option value="ND">North Dakota</option>
+								<option value="OH">Ohio</option>
+								<option value="OK">Oklahoma</option>
+								<option value="OR">Oregon</option>
+								<option value="PA">Pennsylvania</option>
+								<option value="RI">Rhode Island</option>
+								<option value="SC">South Carolina</option>
+								<option value="SD">South Dakota</option>
+								<option value="TN">Tennessee</option>
+								<option value="TX">Texas</option>
+								<option value="UT">Utah</option>
+								<option value="VT">Vermont</option>
+								<option value="VA">Virginia</option>
+								<option value="WA">Washington</option>
+								<option value="WV">West Virginia</option>
+								<option value="WI">Wisconsin</option>
+								<option value="WY">Wyoming</option>
+							</select>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="text-left">
+							<label class="whiteFont" for="degree">Degree:<span
+								style="color: red;">*</span></label><br>
+							<div class="radio">
+								<label class="whiteFont"><input type="radio"
+									name="degree" id="us" checked="checked" value="us">Fahrenheit</label>
+								<label class="whiteFont"><input type="radio"
+									name="degree" id="si" value="si">Celesius</label>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3" style="padding-left: 5px;">
+						<div class="text-right">
+							<br>
+							<button type="submit" class="btn btn-info btn-sm">
+								<span class="glyphicon glyphicon-search"></span>Search
+							</button>
+							<button type="reset" class="btn btn-default btn-sm" id="clear">
+								<span class="glyphicon glyphicon-refresh"></span> Clear
+							</button>
+						</div>
+					</div>
+				</div>
+			</form>
+			<div class="row">
+				<div class="col-md-12">
+					<div class="text-right">
+						<label for="forecastLogo" class="whiteFont">Powered By:</label><img
+							style="width: 80px; height: 40px;" src="forecast_logo.png"
+							alt="Forecast logo">
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+				<hr style="color: white; padding-top: 2px;">
+			</div>
+		</div>
+		<div id="result">
+		  
+			<ul id="tabs" class="nav nav-tabs responsive" data-tabs="tabs">
+				<li class="active"><a href="#tab1" data-toggle="tab">Right Now</a></li>
+				<li><a href="#tab2" data-toggle="tab">Next 24 Hours</a></li>
+				<li><a href="#tab3" data-toggle="tab">Next 7 Days</a></li>
+			</ul>
+			<div id="my-tab-content responsive" class="tab-content">
+				<div class="tab-pane active" id="tab1">
+					<div class="row no-gutter" style="padding-left:0;">
+						<div class="col-md-6">   <!-- left pane on tab 1 -->
+							<div class="row no-gutter" id="TabOneTop">
+							<div class="col-md-6">   <!-- Tab 1 image -->
+								<div class="text-center">
+									<div id="TabOneImage" style="background-color:#FF9999"></div>
+								</div>
+							</div>
+								<div class="col-md-6">
+									<!-- Tab 1 temperature display -->
+									<div style="background-color: #FF9999">
+										<div class="row">
+											<div class="text-center">
+												<div class="col-xs-12 col-md-12" id="TabOneTempDisplay">
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						<div class="row" id="TabOneBottom" style="margin-top:20px;">
+							<div class="col-md-12" id="TabOneTable" style="margin-top:-30px;">
+								<!-- Tab 1 table -->
+								<table style="background-color: white;"
+									class="table table-striped">
+									<tr>
+										<td>Precipitation</td>
+										<td id="precipitation"></td>
+									</tr>
+									<tr>
+										<td>Chance of Rain</td>
+										<td id="chanceOfRain"></td>
+									</tr>
+									<tr>
+										<td>Wind Speed</td>
+										<td id="windSpeed"></td>
+									</tr>
+									<tr>
+										<td>Dew Point</td>
+										<td id="dewPoint"></td>
+									</tr>
+									<tr>
+										<td>Humidity</td>
+										<td id="humidity"></td>
+									</tr>
+									<tr>
+										<td>Visibility</td>
+										<td id="visibility"></td>
+									</tr>
+									<tr>
+										<td>Sunrise</td>
+										<td id="sunrise"></td>
+									</tr>
+									<tr>
+										<td>Sunset</td>
+										<td id="sunset"></td>
+									</tr>
+								</table>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-6">
+						<!-- Maps -->
+						<div id="map" class="map" style="height: 516px; width: auto; border:solid 1px; border-color:white;"></div>
+					</div>
+				</div>
+			</div>
+			<div class="tab-pane" id="tab2">
+					<div class="panel panel-default" style="border-color:#006697">
+						<div class="panel-heading" style="background-color: #006697;color: white;word-wrap: break-word;">
+							<div class="row">
+							    <div class="col-xs-1 col-md-1"></div>
+								<div class="col-xs-2 col-md-2">Time</div>
+								<div class="col-xs-2 col-md-2">Summary</div>
+								<div class="col-xs-2 col-md-2">Cloud Cover</div>
+								<div class="col-xs-2 col-md-2" id="temp"></div>
+								<div class="col-xs-2 col-md-2">View Details</div>
+								 <div class="col-xs-1 col-md-1"></div>
+							</div>
+							
+							</div>
+							<div id="nextHours">
+							</div>
+					</div>
+				</div>
+
+				<div class="tab-pane" id="tab3" >
+					<div id="nextWeek" style="background-color:black;">
+					<div class="row"><div class="col-md-12"><br></div></div>
+						<div class="row">
+							<div class="col-md-2 form-group"></div>
+							<div class="col-md-1 form-group marginTabThree"><button type="button" class="btn btn-lg btn-primary test" data-toggle="modal" data-target="#modalOne" id="day1"></button></div>
+							<div class="col-md-1 form-group marginTabThree"><button type="button" class="btn btn-lg btn-danger text-center test" data-toggle="modal" data-target="#modalTwo" id="day2"></button></div>
+							<div class="col-md-1 form-group marginTabThree"><button type="button" class="btn btn-lg btn-warning text-center test" data-toggle="modal" data-target="#modalThree" id="day3" ></button></div>
+							<div class="col-md-1 form-group marginTabThree"><button type="button" class="btn btn-lg text-center test" data-toggle="modal" data-target="#modalFour" id="day4" style="background-color:#669933"></button></div>
+							<div class="col-md-1 form-group marginTabThree"><button type="button" class="btn btn-lg text-center test" data-toggle="modal" data-target="#modalFive" id="day5" style="background-color:#6699FF"></button></div>
+							<div class="col-md-1 form-group marginTabThree"><button type="button" class="btn btn-lg text-center test" data-toggle="modal" data-target="#modalSix" id="day6" style="background-color:#FF6699"></button></div>
+							<div class="col-md-1 form-group marginTabThree"><button type="button" class="btn btn-lg text-center test" data-toggle="modal" data-target="#modalSeven" id="day7" style="background-color:#CC3366"></button></div>
+							<div class="col-md-3 form-group"></div>
+						</div>
+						<div class="row"><div class="col-md-12"><br></div></div>
+				   </div>
+				</div>
+
+				<div class="modal fade" id="modalOne" role="dialog">
+					<div class="modal-dialog">
+
+						<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal">&times;</button>
+								<h4 class="modal-title" id="mHeader1"></h4>
+							</div>
+							<div class="modal-body" id="mBody1"></div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-default"
+									data-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="modal fade" id="modalTwo" role="dialog">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal">&times;</button>
+								<h4 class="modal-title" id="mHeader2"></h4>
+							</div>
+							<div class="modal-body" id="mBody2"></div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-default"
+									data-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="modal fade" id="modalThree" role="dialog">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal">&times;</button>
+								<h4 class="modal-title" id="mHeader3"></h4>
+							</div>
+							<div class="modal-body" id="mBody3"></div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-default"
+									data-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="modal fade" id="modalFour" role="dialog">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal">&times;</button>
+								<h4 class="modal-title" id="mHeader4"></h4>
+							</div>
+							<div class="modal-body" id="mBody4"></div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-default"
+									data-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="modal fade" id="modalFive" role="dialog">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal">&times;</button>
+								<h4 class="modal-title" id="mHeader5"></h4>
+							</div>
+							<div class="modal-body" id="mBody5"></div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-default"
+									data-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+				<div class="modal fade" id="modalSix" role="dialog">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal">&times;</button>
+								<h4 class="modal-title" id="mHeader6"></h4>
+							</div>
+							<div class="modal-body" id="mBody6"></div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-default"
+									data-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="modal fade" id="modalSeven" role="dialog">
+					<div class="modal-dialog">
+						<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal">&times;</button>
+								<h4 class="modal-title" id="mHeader7"></h4>
+							</div>
+							<div class="modal-body" id="mBody7"></div>
+							<div class="modal-footer">
+								<button type="button" class="btn btn-default"
+									data-dismiss="modal">Close</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+			</div>
+		</div>
+	</div><script src="http://openlayers.org/api/OpenLayers.js"></script>
+<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.9/jquery.validate.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+	<script src="http://openlayers.org/api/OpenLayers.js"></script>
+<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.9/jquery.validate.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+</body>
+</html>
